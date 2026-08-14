@@ -7,6 +7,7 @@ from clients.nats import (
 )
 from core.services import NotificationCommandSendEmailService
 from settings import nats_settings as nats_settings_instance
+from settings import celery_settings as celery_settings_instance
 
 
 class ApplicationContainer(containers.DeclarativeContainer):
@@ -31,4 +32,10 @@ class ApplicationContainer(containers.DeclarativeContainer):
         client=nats_client,
         settings=nats_settings,
         handler=notification_command_send_email_handler,
+    )
+
+    # Celery
+    celery_settings = providers.Object(celery_settings_instance)
+    celery_app = providers.Singleton(
+        lambda: __import__("workers.celery_app", fromlist=["celery_app"]).celery_app,
     )

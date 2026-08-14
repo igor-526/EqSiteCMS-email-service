@@ -1,6 +1,6 @@
-# FastAPI Template
+# Email Service
 
-Пустой шаблон FastAPI с Clean Architecture, PostgreSQL и эндпоинтом проверки состояния.
+Сервис отправки email-уведомлений EqSiteCMS. Принимает команды через NATS и Celery.
 
 ## Стек
 
@@ -9,6 +9,8 @@
 - SQLAlchemy Core + asyncpg
 - PostgreSQL 17
 - Alembic
+- NATS Jetstream (команды)
+- Celery + Redis (очередь задач)
 - Sentry (опционально)
 
 ## Архитектура
@@ -16,34 +18,71 @@
 ```text
 src/
 ├── api/             # HTTP-контракты
-├── core/            # сущности, схемы, протоколы и бизнес-логика
-├── depends/         # сборка зависимостей FastAPI
+├── clients/         # NATS клиенты
+├── containers/      # DI-контейнер (NATS + Celery)
+├── core/            # Бизнес-логика и сервисы
+├── depends/         # FastAPI Depends-фабрики
 ├── models/          # SQLAlchemy Core tables
-├── repositories/    # реализации repository protocols
+├── repositories/    # Реализации репозиториев
 ├── migration/       # Alembic
-├── utils/           # База данных и инфраструктурные утилиты
+├── utils/           # Утилиты
+├── workers/
+│   ├── celery_app.py   # Celery app конфигурация
+│   └── tasks/
+│       └── email.py    # Задачи отправки email
 ├── main.py
-└── settings.py
+└── settings.py      # Settings, NatsSettings, CelerySettings
 ```
 
 ## Запуск в Docker
 
 ```bash
 cp .env.example .env
-docker compose up --build
+docker compose -f docker-compose.infra.yml up -d
+docker compose -f docker-compose.email.yml up --build
 ```
 
-Compose дождётся PostgreSQL, применит миграции и запустит API на `http://localhost:8000`.
-Swagger доступен на `http://localhost:8000/docs`.
-Контейнеры объединяются в Compose-проект `fastapi-template`. Каталог `src` подключён как bind mount,
-а Uvicorn автоматически перезапускает приложение при изменении исходного кода.
+Compose запустит API, миграции и celery-worker.
+
+## Celery
+
+### Очереди
+
+| Очередь | Задачи | Описание |
+|---------|--------|----------|
+| `email` | `email.send` | Отправка email |
+
+### Команды запуска
+
+```bash
+# Celery worker (запускается автоматически в docker-compose)
+celery -A workers.celery_app worker -Q email -l info
+
+# Мониторинг (опционально)
+celery -A workers.celery_app inspect active
+```
+
+### Переменные окружения
+
+| Переменная | Значение по умолчанию | Описание |
+|------------|----------------------|----------|
+| `CELERY_APP_MAIN` | `email-service` | Имя приложения Celery |
+| `CELERY_APP_BROKER` | `redis://:<password>@redis:6379/1` | Redis broker (очередь) |
+| `CELERY_APP_BACKEND` | `redis://:<password>@redis:6379/2` | Redis backend (результаты) |
+| `REDIS_PASSWORD` | — | Пароль Redis |
+
+### Добавление новой задачи
+
+1. Создайте файл в `src/workers/tasks/`
+2. Определите задачу с `@shared_task(name="<domain>.<action>")`
+3. Задача автоматически зарегистрируется через `autodiscover_tasks`
 
 ## Локальная разработка
 
 ```bash
 cp .env.example .env
 uv sync
-docker compose up -d db
+docker compose -f docker-compose.infra.yml up -d db redis
 uv run alembic -c src/alembic.ini upgrade head
 uv run uvicorn main:app --app-dir src --reload
 ```
@@ -60,6 +99,10 @@ make test
 |---|---|---|
 | GET | `/health` | Healthcheck |
 
-Пакеты `api`, `core`, `depends`, `models` и `repositories` оставлены как точки расширения для новых бизнес-фич.
+## NATS JetStream
 
-Sentry включается через `SENTRY_ENABLED=true` и `SENTRY_DSN`. Prometheus в шаблон не входит.
+Email Service выступает в роли **Consumer** — принимает команды на отправку email из `NOTIFICATION_COMMANDS`.
+
+| Stream | Subject | Назначение | Роль |
+|--------|---------|------------|------|
+| NOTIFICATION_COMMANDS | commands.notification.email.send | Приём команды на отправку email | входящий |

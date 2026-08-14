@@ -117,20 +117,20 @@ class NatsSettings(BaseSettings):
     )
 
 
-class CeleryAppSettings(BaseSettings):
+class CelerySettings(BaseSettings):
     celery_app_main: str = Field(
         default="email-service",
         alias="CELERY_APP_MAIN",
     )
 
     celery_app_broker: str = Field(
-    default="redis://redis:6379/1",
-    alias="CELERY_APP_BROKER",
+        default="redis://:eqsitecmsredis@redis:6379/1",
+        alias="CELERY_APP_BROKER",
     )
-    
+
     celery_app_backend: str = Field(
-    default="redis://redis:6379/2",
-    alias="CELERY_APP_BACKEND",
+        default="redis://:eqsitecmsredis@redis:6379/2",
+        alias="CELERY_APP_BACKEND",
     )
 
     model_config = SettingsConfigDict(
@@ -140,4 +140,4 @@ class CeleryAppSettings(BaseSettings):
 
 settings = Settings()
 nats_settings = NatsSettings()
-celery_app_settings = CeleryAppSettings()
+celery_settings = CelerySettings()
