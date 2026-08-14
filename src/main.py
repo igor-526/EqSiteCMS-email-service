@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from api.endpoints.emails import router as emails_router
 from containers.application import ApplicationContainer
 from core.exceptions import AppError
 from settings import settings
@@ -39,6 +40,8 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_title, debug=settings.debug, lifespan=lifespan)
+
+app.include_router(emails_router, tags=["Emails"])
 
 
 @app.get("/health", tags=["Health"])

@@ -2,12 +2,12 @@ import asyncio
 import logging
 from uuid import UUID
 
-from celery import shared_task
+from workers.celery_app import celery_app
 
 logger = logging.getLogger(__name__)
 
 
-@shared_task(
+@celery_app.task(
     bind=True,
     name="email.send",
     autoretry_for=(Exception,),

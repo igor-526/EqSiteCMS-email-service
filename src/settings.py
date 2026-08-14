@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     postgres_port: int = Field(default=5432, alias="POSTGRES_PORT")
     postgres_db: str = Field(default="app", alias="POSTGRES_DB")
 
+    email_confirmation_ttl_hours: int = Field(default=24, alias="EMAIL_CONFIRMATION_TTL_HOURS")
+    frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     @model_validator(mode="after")
@@ -162,6 +165,7 @@ celery_settings = CelerySettings()
 
 class MainBackendSettings(BaseSettings):
     """Настройки для подключения к main backend."""
+
     main_backend_url: str = Field(
         default="http://localhost:8000",
         alias="MAIN_BACKEND_URL",

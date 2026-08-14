@@ -52,13 +52,18 @@ class SMTPEmailSender:
             subject,
         )
 
+        # Port 465 = implicit TLS (SSL), Port 587 = STARTTLS
+        use_tls = smtp_settings.smtp_port == 465
+        starttls = smtp_settings.smtp_port == 587
+
         await aiosmtplib.send(
             msg,
             hostname=smtp_settings.smtp_host,
             port=smtp_settings.smtp_port,
             username=smtp_settings.smtp_user or None,
             password=smtp_settings.smtp_password or None,
-            use_tls=smtp_settings.smtp_use_tls,
+            use_tls=use_tls,
+            start_tls=starttls,
             recipients=all_recipients,
         )
 

@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -115,3 +116,34 @@ class SQLAlchemyEmailLogRepository:
         await self._session.execute(stmt)
         await self._session.flush()
         logger.info("Incremented attempts for email_log id=%s", email_log_id)
+
+    async def log_action(
+        self,
+        *,
+        action: str,
+        status: str,
+        details: dict | None = None,
+    ) -> dict:
+        """Создать запись в email_logs для логирования действий (не email-отправок)."""
+        now = datetime.now(UTC)
+        new_id = uuid4()
+
+        stmt = (
+            pg_insert(email_logs)
+            .values(
+                id=new_id,
+                event_uuid=uuid4(),
+                to=[],
+                subject=action,
+                body=json.dumps(details or {}),
+                status=status,
+                attempts=0,
+                created_at=now,
+                updated_at=now,
+            )
+            .returning(email_logs)
+        )
+        result = await self._session.execute(stmt)
+        row = result.mappings().one()
+        logger.info("Logged action=%s status=%s id=%s", action, status, row["id"])
+        return dict(row)
