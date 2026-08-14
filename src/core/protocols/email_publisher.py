@@ -8,5 +8,4 @@ class EmailPublisher(Protocol):
         recipient: str,
         subject: str,
         body: str,
-    ) -> None:
-        ...
+    ) -> None: ...

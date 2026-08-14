@@ -11,4 +11,4 @@ class NotificationCommandSendEmailService:
         *,
         payload: NotificationCommandSendEmailData,
     ) -> None:
-        print(payload)
+        logger.info("Processing notification command: event_uuid=%s", payload.event_uuid)

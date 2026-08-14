@@ -10,9 +10,7 @@ celery_app = Celery(
 )
 
 # Очереди
-celery_app.conf.task_queues = (
-    Queue("email"),
-)
+celery_app.conf.task_queues = (Queue("email"),)
 celery_app.conf.task_default_queue = "email"
 
 # Сериализация

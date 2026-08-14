@@ -37,6 +37,22 @@ class Settings(BaseSettings):
         )
 
 
+class SMTPSettings(BaseSettings):
+    smtp_host: str = Field(default="smtp.yandex.ru", alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, alias="SMTP_PORT")
+    smtp_user: str = Field(default="", alias="SMTP_USER")
+    smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
+    smtp_use_tls: bool = Field(default=True, alias="SMTP_USE_TLS")
+    email_from: str = Field(default="igor-526@yandex.ru", alias="EMAIL_FROM")
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
+
+
 class NatsSettings(BaseSettings):
     # BASE
     nats_servers_raw: str = Field(
@@ -139,5 +155,6 @@ class CelerySettings(BaseSettings):
 
 
 settings = Settings()
+smtp_settings = SMTPSettings()
 nats_settings = NatsSettings()
 celery_settings = CelerySettings()
