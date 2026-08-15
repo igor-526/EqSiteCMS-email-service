@@ -58,7 +58,7 @@ class EmailProcessingService:
             logger.exception("Failed to create email_log for event_uuid=%s", payload.event_uuid)
             return None
 
-        email_log_id = record["id"]
+        email_log_id: UUID = record["id"]
         logger.info("Created email_log id=%s, dispatching to Celery", email_log_id)
         return email_log_id
 

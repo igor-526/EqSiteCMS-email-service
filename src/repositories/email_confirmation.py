@@ -47,7 +47,7 @@ class SQLAlchemyEmailConfirmationRepository:
         now = datetime.now(UTC)
         stmt = update(email_confirmations).where(email_confirmations.c.id == confirmation_id).values(used_at=now)
         result = await self._session.execute(stmt)
-        if result.rowcount > 0:
+        if result.rowcount > 0:  # type: ignore[attr-defined]
             logger.info("Marked email_confirmation id=%s as used", confirmation_id)
         else:
             logger.warning("No email_confirmation found to mark used id=%s", confirmation_id)
@@ -66,6 +66,6 @@ class SQLAlchemyEmailConfirmationRepository:
         result = await self._session.execute(stmt)
         logger.info(
             "Invalidated %d previous confirmations for user_email_id=%s",
-            result.rowcount,
+            result.rowcount,  # type: ignore[attr-defined]
             user_email_id,
         )

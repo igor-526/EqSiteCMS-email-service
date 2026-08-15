@@ -116,7 +116,7 @@ class SQLAlchemyUserEmailRepository:
             .values(deleted_at=now)
         )
         result = await self._session.execute(stmt)
-        if result.rowcount > 0:
+        if result.rowcount > 0:  # type: ignore[attr-defined]
             logger.info("Soft deleted user_email user_id=%s", user_id)
         else:
             logger.info("User email already deleted or not found user_id=%s", user_id)
@@ -137,7 +137,7 @@ class SQLAlchemyUserEmailRepository:
             )
         )
         result = await self._session.execute(stmt)
-        if result.rowcount > 0:
+        if result.rowcount > 0:  # type: ignore[attr-defined]
             logger.info("Approved user_email user_id=%s", user_id)
         else:
             logger.warning("No user_email found to approve user_id=%s", user_id)

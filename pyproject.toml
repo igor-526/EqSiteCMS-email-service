@@ -65,3 +65,13 @@ typeCheckingMode = "standard"
 reportMissingImports = "error"
 reportMissingModuleSource = "error"
 reportImportCycles = "warning"
+
+[tool.mypy]
+python_version = "3.14"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["celery.*", "kombu.*"]
+ignore_missing_imports = true

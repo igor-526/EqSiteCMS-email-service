@@ -3,6 +3,7 @@ import logging
 
 from nats.aio.msg import Msg
 from nats.errors import TimeoutError
+from nats.js.client import JetStreamContext
 
 from clients.nats.client import NatsJetstreamClient
 from core.protocols.messaging import (
@@ -26,7 +27,7 @@ class NotificationCommandsSendEmailConsumer:
         self._handler = handler
 
         self._task: asyncio.Task[None] | None = None
-        self._subscription = None
+        self._subscription: JetStreamContext.PullSubscription | None = None
 
     @property
     def is_running(self) -> bool:
