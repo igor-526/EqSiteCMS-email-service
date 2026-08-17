@@ -1,3 +1,4 @@
+import os
 from functools import cached_property
 
 from pydantic import Field, model_validator
@@ -30,6 +31,25 @@ class Settings(BaseSettings):
     def validate_production_secrets(self) -> Settings:
         if self.sentry_enabled and not self.sentry_dsn:
             raise ValueError("SENTRY_DSN is required when SENTRY_ENABLED=true")
+        if self.environment.lower() == "production":
+            required = (
+                "POSTGRES_PASSWORD",
+                "REDIS_PASSWORD",
+                "CELERY_APP_BROKER",
+                "CELERY_APP_BACKEND",
+                "SMTP_PASSWORD",
+                "MAIN_BACKEND_SERVICE_KEY",
+                "NATS_SERVERS",
+            )
+            unsafe = {"", "app", "changeme", "eqsitecmsredis"}
+
+            def is_unsafe(name: str) -> bool:
+                value = os.getenv(name, "").strip().lower()
+                return value in unsafe or any(marker in value for marker in ("<set-", "<generate-"))
+
+            invalid = [name for name in required if is_unsafe(name)]
+            if invalid:
+                raise ValueError(f"Unsafe or missing production settings: {', '.join(invalid)}")
         return self
 
     @cached_property

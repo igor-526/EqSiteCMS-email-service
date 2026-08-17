@@ -3,7 +3,7 @@ import secrets
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
-from core.exceptions import ConflictError, GoneError, NotFoundError
+from core.exceptions import ClientError, ConflictError, GoneError, NotFoundError
 from repositories.protocols import (
     EmailConfirmationRepositoryProtocol,
     EmailLogRepositoryProtocol,
@@ -68,7 +68,7 @@ class EmailConfirmationService:
                 status="not_found",
                 details={"code": code},
             )
-            raise NotFoundError("Confirmation code not found")
+            raise ClientError("Confirmation code is invalid")
 
         confirmation_id = confirmation["id"]
         user_email_record_id = confirmation["user_email_id"]

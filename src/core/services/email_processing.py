@@ -32,16 +32,6 @@ class EmailProcessingService:
         """
         logger.info("Processing incoming email event: event_uuid=%s", payload.event_uuid)
 
-        existing = await self._repository.find_by_event_uuid(event_uuid=payload.event_uuid)
-        if existing is not None:
-            logger.warning(
-                "Duplicate event_uuid=%s, existing id=%s status=%s — skipping",
-                payload.event_uuid,
-                existing["id"],
-                existing["status"],
-            )
-            return None
-
         try:
             record = await self._repository.create(
                 event_uuid=payload.event_uuid,
@@ -56,6 +46,10 @@ class EmailProcessingService:
             )
         except Exception:
             logger.exception("Failed to create email_log for event_uuid=%s", payload.event_uuid)
+            return None
+
+        if record is None:
+            logger.info("Duplicate event_uuid=%s — skipping", payload.event_uuid)
             return None
 
         email_log_id: UUID = record["id"]

@@ -1,9 +1,10 @@
+from typing import Any, cast
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 
-from api.dependencies import get_email_confirmation_service, get_user_email_service, verify_service_key
+from api.dependencies import get_email_confirmation_service, get_user_email_service
 from api.schemas.email import (
     ConfirmationResponse,
     EmailConfirmRequest,
@@ -34,7 +35,6 @@ async def get_emails(
 async def create_email(
     body: EmailCreateRequest,
     service: UserEmailService = Depends(get_user_email_service),  # noqa: B008
-    _: str = Depends(verify_service_key),
 ) -> dict:
     """Создать email пользователя (Protected Write)."""
     return await service.create_email(user_id=body.user_id, email=body.email)
@@ -44,7 +44,6 @@ async def create_email(
 async def update_email(
     body: EmailUpdateRequest,
     service: UserEmailService = Depends(get_user_email_service),  # noqa: B008
-    _: str = Depends(verify_service_key),
 ) -> dict:
     """Обновить email пользователя (Protected Write)."""
     return await service.change_email(user_id=body.user_id, new_email=body.email)
@@ -54,7 +53,6 @@ async def update_email(
 async def delete_email(
     user_id: UUID,
     service: UserEmailService = Depends(get_user_email_service),  # noqa: B008
-    _: str = Depends(verify_service_key),
 ) -> None:
     """Мягкое удаление email пользователя (Protected Write)."""
     await service.delete_email(user_id=user_id)
@@ -64,7 +62,6 @@ async def delete_email(
 async def confirm_email(
     body: EmailConfirmRequest,
     service: EmailConfirmationService = Depends(get_email_confirmation_service),  # noqa: B008
-    _: str = Depends(verify_service_key),
 ) -> dict:
     """Подтвердить email по коду (Protected Write)."""
     return await service.confirm(code=body.code)
@@ -74,7 +71,6 @@ async def confirm_email(
 async def send_confirmation(
     body: EmailSendConfirmationRequest,
     service: UserEmailService = Depends(get_user_email_service),  # noqa: B008
-    _: str = Depends(verify_service_key),
 ) -> JSONResponse:
     """Отправить ссылку для подтверждения email (Protected Write).
 
@@ -88,7 +84,7 @@ async def send_confirmation(
     # Диспатчим Celery task
     from workers.tasks.confirmation import send_confirmation_email_task
 
-    send_confirmation_email_task.delay(str(body.user_id))
+    cast(Any, send_confirmation_email_task).delay(str(body.user_id))
 
     return JSONResponse(
         status_code=202,

@@ -1,20 +1,20 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
 class EmailCreateRequest(BaseModel):
     user_id: UUID
-    email: str
+    email: EmailStr
 
 
 class EmailUpdateRequest(BaseModel):
     user_id: UUID
-    email: str
+    email: EmailStr
 
 
 class EmailConfirmRequest(BaseModel):
-    code: str
+    code: str = Field(min_length=1)
 
 
 class EmailSendConfirmationRequest(BaseModel):

@@ -6,7 +6,7 @@ from uuid import uuid4
 
 import pytest
 
-from core.exceptions import ConflictError, GoneError, NotFoundError
+from core.exceptions import ClientError, ConflictError, GoneError, NotFoundError
 from core.services.email_confirmation import EmailConfirmationService
 
 
@@ -74,8 +74,10 @@ async def test_confirm_success(service, mock_confirmation_repo, mock_user_email_
 async def test_confirm_code_not_found(service, mock_confirmation_repo, mock_email_log_repo):
     mock_confirmation_repo.get_by_code.return_value = None
 
-    with pytest.raises(NotFoundError):
+    with pytest.raises(ClientError) as exc_info:
         await service.confirm("nonexistent_code_1234567890")
+
+    assert exc_info.value.status_code == 400
 
 
 async def test_confirm_code_expired(service, mock_confirmation_repo, mock_email_log_repo):

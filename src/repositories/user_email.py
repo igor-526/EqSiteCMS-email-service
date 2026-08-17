@@ -105,7 +105,7 @@ class SQLAlchemyUserEmailRepository:
         return dict(row)
 
     async def soft_delete(self, *, user_id: UUID) -> bool:
-        """Мягкое удаление. Идемпотентно: возвращает True всегда."""
+        """Мягко удалить существующий email пользователя."""
         now = datetime.now(UTC)
         stmt = (
             update(user_emails)
@@ -119,7 +119,7 @@ class SQLAlchemyUserEmailRepository:
         if result.rowcount > 0:  # type: ignore[attr-defined]
             logger.info("Soft deleted user_email user_id=%s", user_id)
         else:
-            logger.info("User email already deleted or not found user_id=%s", user_id)
+            raise NotFoundError(f"User email not found for user_id={user_id}")
         return True
 
     async def approve(self, *, user_id: UUID) -> None:

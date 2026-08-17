@@ -35,9 +35,9 @@ async def _send_confirmation_email(user_id: str) -> dict:
     from repositories.email_log import SQLAlchemyEmailLogRepository
     from repositories.user_email import SQLAlchemyUserEmailRepository
     from settings import settings
-    from utils.database import SessionFactory
+    from utils.database import task_session
 
-    async with SessionFactory() as session:
+    async with task_session() as session:
         try:
             user_email_repo = SQLAlchemyUserEmailRepository(session)
             confirmation_repo = SQLAlchemyEmailConfirmationRepository(session)

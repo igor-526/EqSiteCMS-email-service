@@ -28,7 +28,7 @@ class SQLAlchemyEmailLogRepository:
         reply_to: str | None = None,
         from_name: str | None = None,
         from_email: str | None = None,
-    ) -> dict:
+    ) -> dict | None:
         """Создать запись в email_logs с идемпотентностью по event_uuid."""
         now = datetime.now(UTC)
         new_id = uuid4()
@@ -59,8 +59,7 @@ class SQLAlchemyEmailLogRepository:
 
         if row is None:
             logger.info("Email log with event_uuid=%s already exists, skipping", event_uuid)
-            existing = await self.find_by_event_uuid(event_uuid=event_uuid)
-            return existing  # type: ignore[return-value]
+            return None
 
         logger.info("Created email_log id=%s event_uuid=%s", row["id"], event_uuid)
         return dict(row)

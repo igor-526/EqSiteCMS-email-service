@@ -1,0 +1,56 @@
+asyncapi: 2.6.0
+info:
+  title: EqSiteCMS Email Service Messaging
+  version: 1.0.0
+  description: Canonical email-command consumer contract.
+servers:
+  jetstream:
+    url: nats://eqcms-nats:4222
+    protocol: nats
+channels:
+  commands.notification.email.send:
+    x-jetstream-stream: NOTIFICATION_COMMANDS
+    x-jetstream-consumer:
+      durable: notification-service-commands-send-email
+      ack-policy: explicit
+      ack-wait-seconds: 30
+      max-deliver: 5
+    subscribe:
+      operationId: consumeNotificationEmailCommand
+      message:
+        $ref: "#/components/messages/NotificationEmailCommand"
+components:
+  messages:
+    NotificationEmailCommand:
+      name: NotificationEmailCommand
+      headers:
+        $ref: "#/components/schemas/IdempotencyHeaders"
+      payload:
+        $ref: "#/components/schemas/NotificationEmailPayload"
+  schemas:
+    IdempotencyHeaders:
+      type: object
+      additionalProperties: false
+      required: [Nats-Msg-Id]
+      properties:
+        Nats-Msg-Id:
+          type: string
+          format: uuid
+    NotificationEmailPayload:
+      type: object
+      additionalProperties: false
+      required: [occurred_at, event_uuid, to, subject, body]
+      properties:
+        occurred_at: {type: string, format: date-time}
+        event_uuid: {type: string, format: uuid}
+        to:
+          type: array
+          minItems: 1
+          items: {type: string}
+        subject: {type: string, minLength: 1, maxLength: 500}
+        body: {type: string, minLength: 1}
+        cc: {type: [array, "null"], items: {type: string}}
+        bcc: {type: [array, "null"], items: {type: string}}
+        reply_to: {type: [string, "null"]}
+        from_name: {type: [string, "null"]}
+        from_email: {type: [string, "null"]}

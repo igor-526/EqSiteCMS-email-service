@@ -1,20 +1,31 @@
 import logging
+from typing import Protocol, cast
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from core.protocols.email_sender import EmailSenderProtocol
 from core.schemas.messaging import NotificationCommandSendEmailData
 from core.services.email_processing import EmailProcessingService
+from repositories.email_log import SQLAlchemyEmailLogRepository
 from workers.tasks.email import send_email_task
 
 logger = logging.getLogger(__name__)
+
+
+class CeleryTaskProtocol(Protocol):
+    def delay(self, *args: object, **kwargs: object) -> object: ...
 
 
 class NotificationCommandsSendEmailHandler:
     def __init__(
         self,
         *,
-        service: EmailProcessingService,
+        session_factory: async_sessionmaker[AsyncSession],
+        email_sender: EmailSenderProtocol,
     ) -> None:
-        self._service = service
+        self._session_factory = session_factory
+        self._email_sender = email_sender
 
     async def handle(
         self,
@@ -37,16 +48,19 @@ class NotificationCommandsSendEmailHandler:
             # Пробрасываем — consumer сделает nak()
             raise
 
-        email_log_id = await self._service.process_incoming_event(
-            payload=event_data,
-        )
+        async with self._session_factory() as session, session.begin():
+            service = EmailProcessingService(
+                repository=SQLAlchemyEmailLogRepository(session),
+                email_sender=self._email_sender,
+            )
+            email_log_id = await service.process_incoming_event(payload=event_data)
 
         if email_log_id is None:
             logger.info("Event already processed or failed to create log, acking NATS")
             return
 
         # Диспатчим в Celery
-        send_email_task.delay(str(email_log_id))
+        cast(CeleryTaskProtocol, send_email_task).delay(str(email_log_id))
         logger.info("Dispatched email_log_id=%s to Celery", email_log_id)
 
 

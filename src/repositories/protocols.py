@@ -16,8 +16,8 @@ class EmailLogRepositoryProtocol(Protocol):
         reply_to: str | None = None,
         from_name: str | None = None,
         from_email: str | None = None,
-    ) -> dict:
-        """Создать запись в email_logs. Возвращает созданную запись."""
+    ) -> dict | None:
+        """Создать запись или вернуть None при конфликте event_uuid."""
         ...
 
     async def update_status(
@@ -75,7 +75,7 @@ class UserEmailRepositoryProtocol(Protocol):
         ...
 
     async def soft_delete(self, *, user_id: UUID) -> bool:
-        """Мягкое удаление. Идемпотентно: возвращает True всегда."""
+        """Мягко удалить email; raise NotFoundError when no active row exists."""
         ...
 
     async def approve(self, *, user_id: UUID) -> None:
