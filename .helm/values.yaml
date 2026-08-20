@@ -15,6 +15,11 @@ resources:
     cpu: 500m
     memory: 512Mi
 
+metrics:
+  enabled: true
+  metricsPort: 9000
+  interval: 30s
+
 # Image settings
 image: ghcr.io/igor-526/eqsitecms-email-service
 imagePullSecertName: ghcr-secret

@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from prometheus_client import start_http_server
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from api.endpoints.emails import router as emails_router
 from containers.application import ApplicationContainer
@@ -26,20 +28,35 @@ configure_sentry()
 async def lifespan(_: FastAPI):
     nats_client = container.nats_client()
     notification_command_send_email_consumer = container.notification_command_send_email_consumer()
+    await nats_client.connect()
+    await nats_client.setup()
+    await notification_command_send_email_consumer.start()
+
+    metrics_runtime = None
+
+    if settings.environment == "production":
+        metrics_runtime = start_http_server(
+            port=9000,
+            addr="0.0.0.0",
+        )
 
     try:
-        await nats_client.connect()
-        await nats_client.setup()
-        await notification_command_send_email_consumer.start()
-
         yield
     finally:
         await notification_command_send_email_consumer.stop()
         await nats_client.close()
         await close_database()
+        if metrics_runtime is not None:
+            metrics_server, metrics_thread = metrics_runtime
+
+            metrics_server.shutdown()
+            metrics_server.server_close()
+            metrics_thread.join()
 
 
 app = FastAPI(title=settings.app_title, debug=settings.debug, lifespan=lifespan)
+
+Instrumentator().instrument(app)
 
 app.include_router(emails_router, tags=["Emails"])
 
