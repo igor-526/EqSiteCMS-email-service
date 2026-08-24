@@ -12,6 +12,11 @@
 - NATS Jetstream (команды)
 - Celery + Redis (очередь задач)
 - Sentry (опционально)
+- Prometheus (production metrics во внутренней сети)
+
+Общая конфигурация Sentry, внутренний Prometheus listener `:9000/metrics`,
+sanitization, проверки и rollback описаны в
+[`docs/operations/observability.md`](../../docs/operations/observability.md).
 
 ## Архитектура
 

@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from nats.aio.msg import Msg
-from nats.errors import TimeoutError
+from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js.client import JetStreamContext
 
 from clients.nats.client import NatsJetstreamClient
@@ -73,7 +73,7 @@ class NotificationCommandsSendEmailConsumer:
                     batch=self._settings.nats_consumer_fetch_batch_size,
                     timeout=self._settings.nats_consumer_fetch_timeout_seconds,
                 )
-            except TimeoutError:
+            except NatsTimeoutError, TimeoutError:
                 continue
             except asyncio.CancelledError:
                 raise
