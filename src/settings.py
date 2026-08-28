@@ -154,6 +154,13 @@ class NatsSettings(BaseSettings):
         ge=1,
     )
 
+    # CONNECTION ERROR POLICY
+    nats_error_report_after_attempts: int = Field(
+        default=3,
+        alias="NATS_ERROR_REPORT_AFTER_ATTEMPTS",
+        ge=1,
+    )
+
     # PULL SETTINGS
     nats_consumer_fetch_batch_size: int = Field(
         default=10,
