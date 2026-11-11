@@ -77,5 +77,3 @@ disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = ["celery.*", "kombu.*"]
 ignore_missing_imports = true
-[tool.uv]
-cache-dir = "/srv/eqSiteCMS/.cache/uv"
