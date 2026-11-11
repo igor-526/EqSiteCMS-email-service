@@ -45,16 +45,8 @@ class SMTPEmailSender:
         if bcc:
             all_recipients.extend(bcc)
 
-        logger.info(
-            "Sending email via SMTP: from=%s to=%s subject=%s",
-            from_addr,
-            all_recipients,
-            subject,
-        )
-
-        # Port 465 = implicit TLS (SSL), Port 587 = STARTTLS
-        use_tls = smtp_settings.smtp_port == 465
-        starttls = smtp_settings.smtp_port == 587
+        mode = smtp_settings.effective_tls_mode
+        logger.info("Sending email via SMTP: mode=%s", mode)
 
         await aiosmtplib.send(
             msg,
@@ -62,9 +54,10 @@ class SMTPEmailSender:
             port=smtp_settings.smtp_port,
             username=smtp_settings.smtp_user or None,
             password=smtp_settings.smtp_password or None,
-            use_tls=use_tls,
-            start_tls=starttls,
+            use_tls=mode == "tls",
+            start_tls=mode == "starttls",
+            validate_certs=True,
             recipients=all_recipients,
         )
 
-        logger.info("Email sent successfully to %s", all_recipients)
+        logger.info("Email sent successfully via SMTP")

@@ -1,5 +1,6 @@
 import os
 from functools import cached_property
+from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -81,7 +82,8 @@ class SMTPSettings(BaseSettings):
     smtp_port: int = Field(default=587, alias="SMTP_PORT")
     smtp_user: str = Field(default="", alias="SMTP_USER")
     smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
-    smtp_use_tls: bool = Field(default=True, alias="SMTP_USE_TLS")
+    smtp_tls_mode: Literal["tls", "starttls", "none"] | None = Field(default=None, alias="SMTP_TLS_MODE")
+    smtp_use_tls: bool | None = Field(default=None, alias="SMTP_USE_TLS")
     email_from: str = Field(default="igor-526@yandex.ru", alias="EMAIL_FROM")
 
     model_config = SettingsConfigDict(
@@ -89,7 +91,27 @@ class SMTPSettings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         populate_by_name=True,
+        hide_input_in_errors=True,
     )
+
+    @property
+    def effective_tls_mode(self) -> Literal["tls", "starttls", "none"]:
+        if self.smtp_tls_mode is not None:
+            if self.smtp_use_tls is not None and self.smtp_use_tls != (self.smtp_tls_mode != "none"):
+                raise ValueError("SMTP_TLS_MODE conflicts with SMTP_USE_TLS")
+            return self.smtp_tls_mode
+        if self.smtp_use_tls is False:
+            raise ValueError("SMTP_USE_TLS=false requires explicit SMTP_TLS_MODE=none")
+        if self.smtp_port == 587:
+            return "starttls"
+        if self.smtp_port == 465 or self.smtp_use_tls is True:
+            return "tls"
+        raise ValueError("SMTP_TLS_MODE is required for nonstandard SMTP_PORT without SMTP_USE_TLS=true")
+
+    @model_validator(mode="after")
+    def validate_transport(self) -> SMTPSettings:
+        _ = self.effective_tls_mode
+        return self
 
 
 class NatsSettings(BaseSettings):
